@@ -109,52 +109,39 @@ Open:
 
 ## Usage
 
-The application provides a browser interface for managing notes.
 
-<img width="1720" height="877" alt="image" src="https://github.com/user-attachments/assets/10d34492-1f1a-41c8-9ede-5364475873da" />
 
-Users can create a note containing a title and body, view individual notes, and delete notes.
+% Insert image here and description %
 
-The application also exposes a REST API for programmatic interaction with the notes.
+The application also exposes a REST API for programmatic interaction with the budget.
 
 ## Screenshots
 
 ### Application Interface
 
-<img width="1333" height="2000" alt="interface" src="https://github.com/user-attachments/assets/6b8a52c4-1545-4c13-af5c-119c25a5703f" />
+% Insert image here and description %
 
-### Create Note
+### Create A Budget Plan
 
-<img width="1596" height="872" alt="image" src="https://github.com/user-attachments/assets/b681a031-ce84-442b-aab3-6999796b178c" />
+% Insert image here and description %
 
 ### API
 
-<img width="1068" height="667" alt="image" src="https://github.com/user-attachments/assets/fee8c333-e0b8-46a6-9202-07592f24dbb2" />
+% Insert image here and description %
 
 
 ### Production Deployment
 
-<img width="807" height="815" alt="image" src="https://github.com/user-attachments/assets/4eec1492-a701-440b-a3db-48d6e5e8170b" />
+% Insert image here and description %
 
 
 ## API Endpoints
 
-| Method | Endpoint                | Description         |
-| ------ | ----------------------- | ------------------- |
-| GET    | `/api/log/`             | List notes          |
-| POST   | `/api/makenote/`        | Create a note       |
-| PUT    | `/api/updatenote/<id>/` | Update a note title |
-| DELETE | `/api/noteDelete/<id>/` | Delete a note       |
+% Insert endpoints here %
 
 Example request:
 
-```/api/makenote/
-
-{
-  "title": "Test_5",
-  "body_text": "Created through the production API"
-}
-
+% Insert example endpoint here %
 ```
 
 ## Testing
@@ -170,7 +157,7 @@ notes/tests/
 └── test_api.py
 ```
 
-The current test suite contains **14 automated tests** covering:
+The current test suite contains ** xxxx automated tests** covering:
 
 * Model behaviour and relationships
 * Web views
@@ -185,17 +172,16 @@ Run the complete test suite with:
 python manage.py test notes
 ```
 
-<img width="970" height="240" alt="image" src="https://github.com/user-attachments/assets/0b5437d1-0402-44cd-a51d-bd9dfdde3398" />
+% Insert image of output of tests here %
 
 ## Deployment
 
 The application is deployed on Render.
 
-**Live application:** https://notesapp-qv1o.onrender.com
+% Insert render url here %
 
 Production uses:
 
-* PostgreSQL
 * Gunicorn
 * Uvicorn
 * WhiteNoise
@@ -203,24 +189,11 @@ Production uses:
 
 The deployment process installs the locked dependencies, collects static files, and applies database migrations.
 
-<img width="807" height="815" alt="image" src="https://github.com/user-attachments/assets/36445f4c-e3d5-4e9f-a709-c9b0210d0f2c" />
-
-## Roadmap
-
-Planned improvements include:
-
-* User authentication
-* User-specific note ownership
-* API permissions
-* Improved API validation
-* Editing note bodies through the API
-* Pagination
-* Continuous integration
-* Improved frontend styling
+% Insert image of application starting up on render %
 
 ## Contributing
 
-This project is primarily a portfolio project, but suggestions and improvements are welcome.
+This project is a portfolio project, but suggestions and improvements are welcome.
 
 To contribute:
 
@@ -238,4 +211,4 @@ GitHub: https://github.com/Fluffy-J
 
 Project Repository: https://github.com/Fluffy-J/django_notesapp
 
-Live Application: https://notesapp-qv1o.onrender.com
+Live Application: % Insert render URL %
