@@ -169,7 +169,7 @@ The current test suite contains ** xxxx automated tests** covering:
 Run the complete test suite with:
 
 ```bash
-python manage.py test notes
+py -3.11 -m pipenv run python manage.py test budgets
 ```
 
 % Insert image of output of tests here %
