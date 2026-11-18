@@ -1,7 +1,10 @@
 
 from decimal import Decimal
 
-from .models import BudgetItem
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.db import transaction
+
+from .models import BudgetItem, BudgetReview
 
 
 ZERO = Decimal("0.00")
@@ -124,3 +127,66 @@ def calculate_budget_summary(budget_plan):
         "priorities_paid": priorities_paid,
         "positive_closing_balance": positive_closing_balance,
     }
+
+
+@transaction.atomic
+def save_budget_review(
+    *,
+    budget_plan,
+    user,
+    marked_successful,
+    review_note="",
+):
+    """
+    Save or update a user's budget review.
+
+    The application calculates the financial criteria.
+    The user explicitly determines overall success.
+    """
+
+    # 1. Verify ownership
+    if budget_plan.user_id != user.pk:
+        raise PermissionDenied(
+            "You cannot review another user's budget."
+        )
+
+    # 2. Require an explicit boolean decision
+    if type(marked_successful) is not bool:
+        raise ValidationError({
+            "marked_successful":
+                "Choose successful or unsuccessful."
+        })
+
+    if not isinstance(review_note, str):
+        raise ValidationError({
+            "review_note": "The review note must be text."
+        })
+
+    # 3. Calculate the current budget results
+    summary = calculate_budget_summary(budget_plan)
+
+    # 4. Prevent incomplete reviews
+    if not summary["ready_for_review"]:
+        raise ValidationError(
+            "Record all actual income and expense "
+            "amounts before reviewing this budget."
+        )
+
+    # 5. Create or update the review
+    review, created = BudgetReview.objects.update_or_create(
+        budget_plan=budget_plan,
+        defaults={
+            "within_expense_limit":
+                summary["within_expense_limit"],
+            "priorities_paid":
+                summary["priorities_paid"],
+            "positive_closing_balance":
+                summary["positive_closing_balance"],
+            "marked_successful":
+                marked_successful,
+            "review_note":
+                review_note,
+        },
+    )
+
+    return review
