@@ -15,6 +15,16 @@ from .models import (
 
 from .services import calculate_budget_summary
 
+from django.core.exceptions import (
+    ValidationError,
+    PermissionDenied,
+)
+
+from .services import (
+    calculate_budget_summary,
+    save_budget_review,
+)
+
 
 class BudgetModelTests(TestCase):
 
@@ -262,3 +272,162 @@ class BudgetSummaryTests(TestCase):
 
         self.assertFalse(summary["ready_for_review"])
         self.assertIsNone(summary["actual_balance"])
+
+
+class BudgetReviewServiceTests(TestCase):
+
+    def setUp(self):
+        User = get_user_model()
+
+        self.user = User.objects.create_user(
+            username="review_tester",
+            password="test-password-123",
+        )
+
+        self.plan = BudgetPlan.objects.create(
+            user=self.user,
+            title="November Budget",
+            budget_month=date(2026, 11, 1),
+        )
+
+        self.income = BudgetItem.objects.create(
+            budget_plan=self.plan,
+            description="Salary",
+            item_type=BudgetItem.ItemType.INCOME,
+            planned_amount=Decimal("8000.00"),
+            actual_amount=Decimal("8000.00"),
+        )
+
+        self.rent = BudgetItem.objects.create(
+            budget_plan=self.plan,
+            description="Rent",
+            item_type=BudgetItem.ItemType.EXPENSE,
+            planned_amount=Decimal("2000.00"),
+            actual_amount=Decimal("2000.00"),
+            is_priority=True,
+            is_paid=True,
+        )
+
+        self.groceries = BudgetItem.objects.create(
+            budget_plan=self.plan,
+            description="Groceries",
+            item_type=BudgetItem.ItemType.EXPENSE,
+            planned_amount=Decimal("3500.00"),
+            actual_amount=Decimal("3850.00"),
+        )
+
+    def test_review_saves_calculated_criteria(self):
+        review = save_budget_review(
+            budget_plan=self.plan,
+            user=self.user,
+            marked_successful=True,
+            review_note="Overall, I managed well.",
+        )
+
+        self.assertFalse(review.within_expense_limit)
+        self.assertTrue(review.priorities_paid)
+        self.assertTrue(review.positive_closing_balance)
+
+        # Final success remains the user's decision
+        self.assertTrue(review.marked_successful)
+        self.assertEqual(
+            review.review_note,
+            "Overall, I managed well.",
+        )
+
+    def test_incomplete_budget_cannot_be_reviewed(self):
+        self.groceries.actual_amount = None
+        self.groceries.save()
+
+        with self.assertRaises(ValidationError):
+            save_budget_review(
+                budget_plan=self.plan,
+                user=self.user,
+                marked_successful=True,
+            )
+
+        self.assertFalse(
+            BudgetReview.objects.filter(
+                budget_plan=self.plan
+            ).exists()
+        )
+
+    def test_review_cannot_be_saved_by_another_user(self):
+        User = get_user_model()
+
+        other_user = User.objects.create_user(
+            username="other_tester",
+            password="test-password-123",
+        )
+
+        with self.assertRaises(PermissionDenied):
+            save_budget_review(
+                budget_plan=self.plan,
+                user=other_user,
+                marked_successful=True,
+            )
+
+        self.assertEqual(
+            BudgetReview.objects.filter(
+                budget_plan=self.plan
+            ).count(),
+            0,
+        )
+
+    def test_success_decision_must_be_boolean(self):
+        with self.assertRaises(ValidationError):
+            save_budget_review(
+                budget_plan=self.plan,
+                user=self.user,
+                marked_successful="yes",
+            )
+
+    def test_re_review_updates_existing_record(self):
+        first_review = save_budget_review(
+            budget_plan=self.plan,
+            user=self.user,
+            marked_successful=True,
+        )
+
+        # User updates actual expenditure
+        self.groceries.actual_amount = Decimal("3000.00")
+        self.groceries.save()
+
+        updated_review = save_budget_review(
+            budget_plan=self.plan,
+            user=self.user,
+            marked_successful=False,
+            review_note="Reassessed my spending.",
+        )
+
+        self.assertEqual(
+            first_review.id,
+            updated_review.id,
+        )
+
+        self.assertEqual(
+            BudgetReview.objects.filter(
+                budget_plan=self.plan
+            ).count(),
+            1,
+        )
+
+        self.assertTrue(
+            updated_review.within_expense_limit
+        )
+        self.assertFalse(
+            updated_review.marked_successful
+        )
+
+    def test_unpaid_priority_does_not_override_user(self):
+        self.rent.is_paid = False
+        self.rent.save()
+
+        review = save_budget_review(
+            budget_plan=self.plan,
+            user=self.user,
+            marked_successful=True,
+        )
+
+        self.assertFalse(review.priorities_paid)
+        self.assertTrue(review.marked_successful)
