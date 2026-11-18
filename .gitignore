@@ -11,6 +11,7 @@ db.sqlite3
 db.sqlite3-journal
 
 # Secrets
+Secret_key_generattion.py
 .env
 .env.*
 
